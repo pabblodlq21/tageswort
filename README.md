@@ -17,10 +17,12 @@ Shared/
   Word.swift          Modelo de datos de una palabra
   WordStore.swift     Carga el catálogo y elige la palabra del día
   SpeechService.swift Pronunciación en alemán (AVSpeechSynthesizer, voz de-DE)
+  NotificationService.swift  Recordatorio diario (UserNotifications)
   words.json          Catálogo (40 palabras; edítalo/amplíalo a gusto)
 App/
-  TageswortApp.swift  Punto de entrada de la app
+  TageswortApp.swift  Punto de entrada de la app (reprograma recordatorios)
   ContentView.swift   Pantalla principal (palabra de hoy + próximas + audio)
+  SettingsView.swift  Ajustes del recordatorio (activar + hora)
 Widget/
   TageswortWidget.swift        El widget y su línea de tiempo
   TageswortWidgetBundle.swift  Bundle del widget (@main del target widget)
@@ -34,12 +36,14 @@ Widget/
    - Borra el `ContentView.swift` y el `...App.swift` que genera Xcode.
 
 2. **Agrega el código de la app.** Arrastra a ese target:
-   - `App/TageswortApp.swift`, `App/ContentView.swift`
-   - `Shared/Word.swift`, `Shared/WordStore.swift`, `Shared/SpeechService.swift`
+   - `App/TageswortApp.swift`, `App/ContentView.swift`, `App/SettingsView.swift`
+   - `Shared/Word.swift`, `Shared/WordStore.swift`, `Shared/SpeechService.swift`,
+     `Shared/NotificationService.swift`
    - `Shared/words.json`  → al agregarlo marca **"Copy items if needed"** y
      deja activado el target de la app en *"Add to targets"*.
-   > `SpeechService.swift` solo lo necesita el target de la **app** (el widget no
-   > reproduce audio; al tocarlo abre la app y esta pronuncia).
+   > `SpeechService.swift` y `NotificationService.swift` solo los necesita el
+   > target de la **app** (el widget no reproduce audio ni programa avisos; al
+   > tocarlo abre la app y esta pronuncia).
 
 3. **Agrega el target del widget.** *File ▸ New ▸ Target… ▸ Widget Extension*.
    - Product Name: `TageswortWidget`
@@ -79,6 +83,23 @@ el target de la **app**:
 La voz alemana viene instalada en iOS; si en un dispositivo no se oye, el usuario
 puede descargarla en *Ajustes ▸ Accesibilidad ▸ Contenido hablado ▸ Voces ▸ Alemán*.
 
+## Recordatorio diario (notificación)
+
+Toca el **engrane** (arriba a la derecha) para abrir *Ajustes* y activar el
+**recordatorio diario**; elige la hora con el selector. La primera vez, iOS pide
+permiso de notificaciones. Cada día, a la hora elegida, llega una notificación con
+la palabra de ese día.
+
+- No requiere ninguna *capability* ni configuración extra en Xcode: las
+  notificaciones **locales** funcionan tal cual. (Solo necesitarías una *capability*
+  si en el futuro quisieras notificaciones *push* desde un servidor.)
+- Como iOS limita las notificaciones pendientes, la app programa una ventana de 14
+  días (cada día con su palabra) y la **reprograma al abrirse**, para que el texto
+  siempre corresponda al día correcto. Mantén el hábito de abrir la app de vez en
+  cuando para refrescar la ventana.
+- Para probar en el simulador: activa el recordatorio con una hora 1–2 minutos en el
+  futuro y deja la app en segundo plano.
+
 ## Cómo rota la palabra
 
 `WordStore.word(for:)` calcula los días transcurridos desde una época fija y hace
@@ -94,6 +115,6 @@ se repite cada 40 días.
   datos escribibles entre app y widget (`UserDefaults(suiteName:)`).
 - **Marcar "ya la aprendí"** y que el algoritmo priorice las no vistas
   (repetición espaciada).
-- **Notificación diaria** con la palabra del día (`UNUserNotificationCenter`).
+- ~~**Notificación diaria** con la palabra del día (`UNUserNotificationCenter`).~~ ✅ hecho.
 
 Dime cuál de estas quieres y la agrego.

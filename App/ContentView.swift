@@ -5,6 +5,7 @@ struct ContentView: View {
     private let word = WordStore.today
 
     @StateObject private var speech = SpeechService.shared
+    @State private var showingSettings = false
 
     // Previsualización de los próximos días para motivar el regreso diario.
     private var upcoming: [Word] {
@@ -24,6 +25,19 @@ struct ContentView: View {
             }
             .navigationTitle("Tageswort")
             .background(Color(.systemGroupedBackground))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Ajustes")
+                }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
+            }
         }
         // Al abrir desde el widget (tageswort://speak) se pronuncia la palabra del día.
         .onOpenURL { url in
