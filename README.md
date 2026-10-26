@@ -83,6 +83,24 @@ el target de la **app**:
 La voz alemana viene instalada en iOS; si en un dispositivo no se oye, el usuario
 puede descargarla en *Ajustes ▸ Accesibilidad ▸ Contenido hablado ▸ Voces ▸ Alemán*.
 
+## Widget en la pantalla de bloqueo (siempre a la vista)
+
+El mismo widget soporta las familias *accessory* de la pantalla de bloqueo, sin
+configuración extra en Xcode (es el mismo target):
+
+- **Rectangular** (debajo del reloj): palabra + traducción.
+- **En línea** (junto al reloj): `der Hund · el perro`.
+- **Circular**: la palabra alemana con un ícono de libro.
+
+Para añadirlo en el iPhone: bloquea la pantalla → mantén pulsado → **Personalizar**
+→ *Pantalla bloqueada* → toca una zona de widgets → elige **Tageswort**.
+
+> La pantalla de bloqueo pinta estos widgets en **monocromo translúcido**, así que
+> ahí no se ve el degradado morado (eso es solo en la pantalla de inicio). Por eso
+> el código usa una vista distinta por familia: `.accessoryRectangular`,
+> `.accessoryInline` y `.accessoryCircular`, además de `.systemSmall` y
+> `.systemMedium`. Al tocar cualquiera se abre la app y pronuncia la palabra.
+
 ## Recordatorio diario (notificación)
 
 Toca el **engrane** (arriba a la derecha) para abrir *Ajustes* y activar el

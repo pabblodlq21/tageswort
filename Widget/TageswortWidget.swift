@@ -42,6 +42,53 @@ struct TageswortWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
+        switch family {
+        case .accessoryInline:
+            // Una sola línea junto al reloj: "der Hund · el perro".
+            Text("\(entry.word.display) · \(entry.word.spanish)")
+                .widgetURL(URL(string: "tageswort://speak"))
+
+        case .accessoryCircular:
+            // Círculo pequeño: palabra alemana ajustada, con un ícono de libro.
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 1) {
+                    Image(systemName: "character.book.closed")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(entry.word.german)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                }
+                .padding(4)
+            }
+            .widgetURL(URL(string: "tageswort://speak"))
+
+        case .accessoryRectangular:
+            // Rectángulo bajo el reloj: palabra + traducción + ejemplo.
+            VStack(alignment: .leading, spacing: 1) {
+                Text("ALEMÁN · CADA 2 H")
+                    .font(.system(size: 9, weight: .semibold))
+                    .widgetAccentable()
+                Text(entry.word.display)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                Text(entry.word.spanish)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .widgetURL(URL(string: "tageswort://speak"))
+
+        default:
+            // Pantalla de inicio (small / medium): tarjeta con degradado.
+            homeScreenCard
+        }
+    }
+
+    /// Tarjeta a color para los widgets de pantalla de inicio.
+    private var homeScreenCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("ALEMÁN · CADA 2 H")
                 .font(.system(size: 9, weight: .bold))
@@ -78,7 +125,7 @@ struct TageswortWidgetEntryView: View {
             LinearGradient(colors: [Color.indigo, Color.purple],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
         }
-        // Al tocar el widget se abre la app y pronuncia la palabra del día.
+        // Al tocar el widget se abre la app y pronuncia la palabra actual.
         .widgetURL(URL(string: "tageswort://speak"))
     }
 }
@@ -91,12 +138,21 @@ struct TageswortWidget: Widget {
             TageswortWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Palabra de alemán")
-        .description("Aprende una palabra nueva de alemán cada 2 horas.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .description("Aprende una palabra nueva de alemán cada 2 horas, en inicio o en la pantalla de bloqueo.")
+        .supportedFamilies([
+            .systemSmall, .systemMedium,
+            .accessoryRectangular, .accessoryInline, .accessoryCircular
+        ])
     }
 }
 
 #Preview(as: .systemMedium) {
+    TageswortWidget()
+} timeline: {
+    WordEntry(date: .now, word: WordStore.current)
+}
+
+#Preview(as: .accessoryRectangular) {
     TageswortWidget()
 } timeline: {
     WordEntry(date: .now, word: WordStore.current)
