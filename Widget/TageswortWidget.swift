@@ -9,27 +9,30 @@ struct WordEntry: TimelineEntry {
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> WordEntry {
-        WordEntry(date: Date(), word: WordStore.today)
+        WordEntry(date: Date(), word: WordStore.current)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (WordEntry) -> Void) {
-        completion(WordEntry(date: Date(), word: WordStore.today))
+        completion(WordEntry(date: Date(), word: WordStore.current))
     }
 
-    /// Genera una entrada por día para los próximos 7 días, cada una a partir de su medianoche.
-    /// Así el widget rota solo aunque el sistema tarde en pedir una recarga.
+    /// Genera una entrada por cada franja de 2 h de las próximas 24 h, alineadas al
+    /// inicio de cada franja. Así el widget rota solo cada 2 h aunque el sistema
+    /// tarde en pedir una recarga.
     func getTimeline(in context: Context, completion: @escaping (Timeline<WordEntry>) -> Void) {
         let calendar = Calendar.current
-        let startOfToday = calendar.startOfDay(for: Date())
+        let start = WordStore.slotStart(for: Date(), calendar: calendar)
+        let slotCount = WordStore.slotsPerDay   // 12 franjas = 24 h de cobertura
 
         var entries: [WordEntry] = []
-        for dayOffset in 0..<7 {
-            guard let day = calendar.date(byAdding: .day, value: dayOffset, to: startOfToday) else { continue }
-            entries.append(WordEntry(date: day, word: WordStore.word(for: day, calendar: calendar)))
+        for i in 0..<slotCount {
+            guard let slot = calendar.date(byAdding: .hour, value: i * WordStore.slotHours, to: start)
+            else { continue }
+            entries.append(WordEntry(date: slot, word: WordStore.word(for: slot, calendar: calendar)))
         }
 
-        // Tras el último día, pedir una nueva línea de tiempo.
-        let refresh = calendar.date(byAdding: .day, value: 7, to: startOfToday) ?? Date()
+        // Tras cubrir el día, pedir una nueva línea de tiempo.
+        let refresh = calendar.date(byAdding: .hour, value: slotCount * WordStore.slotHours, to: start) ?? Date()
         completion(Timeline(entries: entries, policy: .after(refresh)))
     }
 }
@@ -40,7 +43,7 @@ struct TageswortWidgetEntryView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("ALEMÁN DEL DÍA")
+            Text("ALEMÁN · CADA 2 H")
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.white.opacity(0.8))
                 .tracking(1)
@@ -87,8 +90,8 @@ struct TageswortWidget: Widget {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             TageswortWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("Palabra del día")
-        .description("Aprende una palabra nueva de alemán cada día.")
+        .configurationDisplayName("Palabra de alemán")
+        .description("Aprende una palabra nueva de alemán cada 2 horas.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -96,5 +99,5 @@ struct TageswortWidget: Widget {
 #Preview(as: .systemMedium) {
     TageswortWidget()
 } timeline: {
-    WordEntry(date: .now, word: WordStore.today)
+    WordEntry(date: .now, word: WordStore.current)
 }

@@ -85,7 +85,8 @@ final class NotificationService: NSObject, ObservableObject {
             // Si la hora de hoy ya pasó, no programes una fecha en el pasado.
             if fireDate <= now { continue }
 
-            let word = WordStore.word(for: day, calendar: calendar)
+            // La palabra que estará activa a la hora de la notificación.
+            let word = WordStore.word(for: fireDate, calendar: calendar)
 
             let content = UNMutableNotificationContent()
             content.title = "Tageswort · Palabra del día"

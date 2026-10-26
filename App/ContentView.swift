@@ -1,30 +1,27 @@
 import SwiftUI
 
 struct ContentView: View {
-    // La palabra de hoy; es la misma que muestra el widget.
-    private let word = WordStore.today
-
     @StateObject private var speech = SpeechService.shared
     @State private var showingSettings = false
 
-    // Previsualización de los próximos días para motivar el regreso diario.
-    private var upcoming: [Word] {
-        (1...5).map { offset in
-            WordStore.word(for: Calendar.current.date(byAdding: .day, value: offset, to: Date())!)
-        }
-    }
-
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    todayCard
-                    upcomingSection
+            // TimelineView recalcula cada minuto, así la palabra cambia sola al
+            // entrar una nueva franja de 2 h, igual que el widget.
+            TimelineView(.periodic(from: .now, by: 60)) { context in
+                let now = context.date
+                let word = WordStore.word(for: now)
+
+                ScrollView {
+                    VStack(spacing: 24) {
+                        todayCard(word: word, now: now)
+                        upcomingSection(now: now)
+                    }
+                    .padding()
                 }
-                .padding()
+                .background(Color(.systemGroupedBackground))
             }
             .navigationTitle("Tageswort")
-            .background(Color(.systemGroupedBackground))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -39,20 +36,26 @@ struct ContentView: View {
                 SettingsView()
             }
         }
-        // Al abrir desde el widget (tageswort://speak) se pronuncia la palabra del día.
+        // Al abrir desde el widget (tageswort://speak) se pronuncia la palabra actual.
         .onOpenURL { url in
             if url.host == "speak" || url.absoluteString.contains("speak") {
-                speech.speakGerman(word.display)
+                speech.speakGerman(WordStore.current.display)
             }
         }
     }
 
-    private var todayCard: some View {
+    private func todayCard(word: Word, now: Date) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("PALABRA DEL DÍA")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-                .tracking(1.5)
+            HStack {
+                Text("PALABRA AHORA")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .tracking(1.5)
+                Spacer()
+                Text("Cambia \(nextChangeText(now: now))")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
 
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(word.display)
@@ -107,20 +110,32 @@ struct ContentView: View {
         .accessibilityLabel("Pronunciar en alemán")
     }
 
-    private var upcomingSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func upcomingSection(now: Date) -> some View {
+        // Próximas 4 franjas de 2 h con su hora de inicio.
+        let slots: [(date: Date, word: Word)] = (1...4).compactMap { i in
+            guard let d = Calendar.current.date(byAdding: .hour,
+                                                value: i * WordStore.slotHours,
+                                                to: WordStore.slotStart(for: now)) else { return nil }
+            return (d, WordStore.word(for: d))
+        }
+
+        return VStack(alignment: .leading, spacing: 12) {
             Text("Próximas palabras")
                 .font(.headline)
                 .padding(.horizontal, 4)
 
-            ForEach(upcoming) { w in
+            ForEach(slots, id: \.date) { slot in
                 HStack {
+                    Text(slot.date, format: .dateTime.hour().minute())
+                        .font(.subheadline.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 64, alignment: .leading)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(w.display).font(.body.weight(.semibold))
-                        Text(w.spanish).font(.subheadline).foregroundStyle(.secondary)
+                        Text(slot.word.display).font(.body.weight(.semibold))
+                        Text(slot.word.spanish).font(.subheadline).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Image(systemName: "lock.fill")
+                    Image(systemName: "clock")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -129,6 +144,16 @@ struct ContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
         }
+    }
+
+    /// Texto relativo de cuándo cambia la palabra, p. ej. "en 1 h 23 min".
+    private func nextChangeText(now: Date) -> String {
+        let next = WordStore.nextSlotStart(after: now)
+        let minutes = max(0, Int(next.timeIntervalSince(now) / 60))
+        let h = minutes / 60
+        let m = minutes % 60
+        if h > 0 { return "en \(h) h \(m) min" }
+        return "en \(m) min"
     }
 }
 

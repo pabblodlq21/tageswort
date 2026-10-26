@@ -100,12 +100,24 @@ la palabra de ese día.
 - Para probar en el simulador: activa el recordatorio con una hora 1–2 minutos en el
   futuro y deja la app en segundo plano.
 
-## Cómo rota la palabra
+## Cómo rota la palabra (cada 2 horas)
 
-`WordStore.word(for:)` calcula los días transcurridos desde una época fija y hace
-`días % cantidad_de_palabras`. El widget genera 7 entradas (una por día, a partir
-de cada medianoche) y pide recarga pasada esa semana. Con 40 palabras, el ciclo
-se repite cada 40 días.
+La palabra cambia cada **2 horas**, en franjas alineadas a la medianoche local
+(00:00, 02:00, 04:00, … 22:00) — 12 franjas por día. `WordStore.word(for:)`
+calcula un índice de franja global (`días × 12 + hora/2`) y hace
+`índice % cantidad_de_palabras`, así que app y widget siempre coinciden.
+
+El widget genera 12 entradas (una por franja, 24 h de cobertura) alineadas al
+inicio de cada franja y pide recarga al terminar el día. La app usa un
+`TimelineView` que recalcula cada minuto, de modo que la palabra cambia sola al
+entrar una nueva franja mientras la app está abierta.
+
+Para cambiar el intervalo, edita `slotHours` en `Shared/WordStore.swift` (p. ej.
+`1` para cada hora, `3` para cada 3 horas). El resto se ajusta solo.
+
+> Nota de iOS: WidgetKit no refresca al segundo exacto; el sistema puede
+> adelantar o retrasar unos minutos la actualización según la batería y el uso.
+> Las entradas pre-generadas hacen que el cambio sea lo más puntual posible.
 
 ## Ideas para crecer (cuando quieras)
 
