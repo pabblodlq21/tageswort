@@ -75,6 +75,8 @@ struct TageswortWidgetEntryView: View {
             LinearGradient(colors: [Color.indigo, Color.purple],
                            startPoint: .topLeading, endPoint: .bottomTrailing)
         }
+        // Al tocar el widget se abre la app y pronuncia la palabra del día.
+        .widgetURL(URL(string: "tageswort://speak"))
     }
 }
 

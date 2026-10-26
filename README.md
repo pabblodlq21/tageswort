@@ -16,10 +16,11 @@ una posición cada día recorriendo todo el catálogo.
 Shared/
   Word.swift          Modelo de datos de una palabra
   WordStore.swift     Carga el catálogo y elige la palabra del día
+  SpeechService.swift Pronunciación en alemán (AVSpeechSynthesizer, voz de-DE)
   words.json          Catálogo (40 palabras; edítalo/amplíalo a gusto)
 App/
   TageswortApp.swift  Punto de entrada de la app
-  ContentView.swift   Pantalla principal (palabra de hoy + próximas)
+  ContentView.swift   Pantalla principal (palabra de hoy + próximas + audio)
 Widget/
   TageswortWidget.swift        El widget y su línea de tiempo
   TageswortWidgetBundle.swift  Bundle del widget (@main del target widget)
@@ -34,9 +35,11 @@ Widget/
 
 2. **Agrega el código de la app.** Arrastra a ese target:
    - `App/TageswortApp.swift`, `App/ContentView.swift`
-   - `Shared/Word.swift`, `Shared/WordStore.swift`
+   - `Shared/Word.swift`, `Shared/WordStore.swift`, `Shared/SpeechService.swift`
    - `Shared/words.json`  → al agregarlo marca **"Copy items if needed"** y
      deja activado el target de la app en *"Add to targets"*.
+   > `SpeechService.swift` solo lo necesita el target de la **app** (el widget no
+   > reproduce audio; al tocarlo abre la app y esta pronuncia).
 
 3. **Agrega el target del widget.** *File ▸ New ▸ Target… ▸ Widget Extension*.
    - Product Name: `TageswortWidget`
@@ -55,6 +58,27 @@ Widget/
    deja la app instalada, ve a la pantalla de inicio del simulador, mantén
    presionado → **+** (arriba a la izquierda) → busca "Palabra del día" → agrégalo.
 
+## Audio de pronunciación (tocar el widget para escuchar)
+
+La app pronuncia en alemán con la voz del sistema `de-DE`. En la pantalla
+principal hay un botón de altavoz junto a la palabra y junto a la frase de
+ejemplo. Además, **tocar el widget** abre la app y pronuncia la palabra del día.
+
+Para que el toque del widget funcione, registra el esquema de URL `tageswort` en
+el target de la **app**:
+
+1. Selecciona el proyecto → target `Tageswort` → pestaña **Info**.
+2. Despliega **URL Types** y pulsa **+**.
+3. En **URL Schemes** escribe `tageswort` (Identifier puede ser el bundle id).
+
+> El widget abre `tageswort://speak`; `ContentView` lo recibe en `.onOpenURL` y
+> llama a `SpeechService`. Si no registras el esquema, el widget simplemente
+> abrirá la app sin pronunciar, y los botones de altavoz dentro de la app seguirán
+> funcionando igual.
+
+La voz alemana viene instalada en iOS; si en un dispositivo no se oye, el usuario
+puede descargarla en *Ajustes ▸ Accesibilidad ▸ Contenido hablado ▸ Voces ▸ Alemán*.
+
 ## Cómo rota la palabra
 
 `WordStore.word(for:)` calcula los días transcurridos desde una época fija y hace
@@ -65,7 +89,7 @@ se repite cada 40 días.
 ## Ideas para crecer (cuando quieras)
 
 - **Más palabras / niveles (A1, A2…):** solo amplía `words.json`.
-- **Audio de pronunciación:** `AVSpeechSynthesizer` con voz `de-DE`.
+- ~~**Audio de pronunciación:** `AVSpeechSynthesizer` con voz `de-DE`.~~ ✅ hecho.
 - **Favoritos y racha diaria:** aquí sí conviene un **App Group** para compartir
   datos escribibles entre app y widget (`UserDefaults(suiteName:)`).
 - **Marcar "ya la aprendí"** y que el algoritmo priorice las no vistas

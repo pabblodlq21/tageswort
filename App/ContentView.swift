@@ -4,6 +4,8 @@ struct ContentView: View {
     // La palabra de hoy; es la misma que muestra el widget.
     private let word = WordStore.today
 
+    @StateObject private var speech = SpeechService.shared
+
     // Previsualización de los próximos días para motivar el regreso diario.
     private var upcoming: [Word] {
         (1...5).map { offset in
@@ -23,6 +25,12 @@ struct ContentView: View {
             .navigationTitle("Tageswort")
             .background(Color(.systemGroupedBackground))
         }
+        // Al abrir desde el widget (tageswort://speak) se pronuncia la palabra del día.
+        .onOpenURL { url in
+            if url.host == "speak" || url.absoluteString.contains("speak") {
+                speech.speakGerman(word.display)
+            }
+        }
     }
 
     private var todayCard: some View {
@@ -32,9 +40,13 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .tracking(1.5)
 
-            Text(word.display)
-                .font(.system(size: 40, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(word.display)
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Spacer()
+                speakerButton(for: word.display, size: 30)
+            }
 
             Text(word.spanish)
                 .font(.title3.weight(.medium))
@@ -43,9 +55,13 @@ struct ContentView: View {
             Divider().overlay(.white.opacity(0.3))
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(word.example)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.white)
+                HStack(alignment: .top, spacing: 10) {
+                    Text(word.example)
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    speakerButton(for: word.example, size: 20)
+                }
                 Text(word.exampleTranslation)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.85))
@@ -59,6 +75,22 @@ struct ContentView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+    }
+
+    /// Botón de altavoz que pronuncia `text` en alemán.
+    private func speakerButton(for text: String, size: CGFloat) -> some View {
+        Button {
+            speech.speakGerman(text)
+        } label: {
+            Image(systemName: speech.isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.2")
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(.white)
+                .symbolEffect(.variableColor.iterative, isActive: speech.isSpeaking)
+                .padding(8)
+                .background(.white.opacity(0.18), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Pronunciar en alemán")
     }
 
     private var upcomingSection: some View {
