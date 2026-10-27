@@ -28,7 +28,34 @@ Widget/
   TageswortWidgetBundle.swift  Bundle del widget (@main del target widget)
 ```
 
-## Montaje en Xcode (paso a paso)
+## Opción rápida: generar el proyecto con XcodeGen (recomendada)
+
+Si tienes [Homebrew](https://brew.sh), esto arma el `.xcodeproj` ya configurado
+(app + widget, archivos compartidos, esquema de URL) y te evita el montaje manual:
+
+```sh
+brew install xcodegen      # una sola vez
+cd tageswort               # la carpeta del repo
+xcodegen generate          # crea Tageswort.xcodeproj
+open Tageswort.xcodeproj
+```
+
+Luego, para instalarlo:
+
+- **En el simulador:** elige un iPhone en la barra superior y pulsa ▶ (no necesita
+  cuenta de desarrollador).
+- **En tu iPhone real:** conéctalo por cable, selecciónalo como destino. En el
+  target `Tageswort` → *Signing & Capabilities* → marca **Automatically manage
+  signing** y elige tu **Team** (tu Apple ID gratuito sirve). Haz lo mismo en el
+  target del widget. Pulsa ▶. La primera vez, en el iPhone ve a *Ajustes ▸ General
+  ▸ VPN y gestión de dispositivos* y **confía** en tu certificado de desarrollador.
+
+> Con Apple ID gratuito, la app instalada en el iPhone caduca a los **7 días** (la
+> vuelves a instalar con ▶). No usamos App Groups, así que funciona sin cuenta de
+> pago. Si el identificador `com.pabblodlq21.tageswort` ya está tomado, cámbialo en
+> `project.yml` y regenera.
+
+## Montaje en Xcode (paso a paso, alternativa manual)
 
 1. **Crea el proyecto.** Xcode → *File ▸ New ▸ Project… ▸ iOS ▸ App*.
    - Product Name: `Tageswort`
